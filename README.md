@@ -5,20 +5,16 @@
 
 ---
 
-## 🌐 Universal Live Website (Works on Every Device)
+## 🌐 Open FixMyCity
 
-To open and test **FixMyCity** on **any device** (Android, iPhone, iPad, Windows, macOS, Linux, or tablet) without requiring any login or Google Cloud permissions, use the **Public Shared URL**:
+- **Public app:** [Open FixMyCity](https://ais-pre-gooh2fuo46gwjbbjsqxz6u-456807731743.asia-east1.run.app/)
+- **Login page:** [Sign in or create an account](https://ais-pre-gooh2fuo46gwjbbjsqxz6u-456807731743.asia-east1.run.app/login)
+- **Latest source code:** [GitHub repository](https://github.com/gourav-cloud/FixMyCity)
 
-### 📱 **Universal Public URL (Any Device & Browser):**
-👉 **[https://ais-pre-gooh2fuo46gwjbbjsqxz6u-456807731743.asia-east1.run.app](https://ais-pre-gooh2fuo46gwjbbjsqxz6u-456807731743.asia-east1.run.app)**
-
-> 💡 **Why this link works everywhere:**  
-> - **Publicly accessible:** Anyone with this link can open the app directly on any mobile browser (Chrome, Safari, Firefox, Edge, Samsung Internet) without logging into AI Studio.  
-> - **Full HTTPS Camera Support:** Real-time camera hardware streaming and photo snapping works natively over secure HTTPS on mobile and desktop.  
-> - **Responsive Touch UI:** Automatically adapts from desktop widescreen dashboards down to native mobile views with touch navigation.
+These links open the existing Cloud Run deployment. Publishing commits to GitHub does not automatically update that service; the Cloud Run app must be redeployed for the latest source changes to appear at the public URLs.
 
 ### 📲 Instant Mobile Access via QR Code:
-Scan this QR code with your phone camera to open FixMyCity immediately:
+Scan this QR code with your phone camera to open the public app:
 
 <p align="center">
   <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=https%3A%2F%2Fais-pre-gooh2fuo46gwjbbjsqxz6u-456807731743.asia-east1.run.app" alt="FixMyCity QR Code" width="160" />
