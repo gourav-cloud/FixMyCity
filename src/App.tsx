@@ -151,13 +151,15 @@ export default function App() {
 
   const handleSignOut = async () => {
     if (!supabaseClient) return;
-    const { error } = await supabaseClient.auth.signOut();
-    if (error) {
+    try {
+      const { error } = await supabaseClient.auth.signOut();
+      if (error) throw error;
+      showToast('Signed out successfully.');
+    } catch (error) {
       console.error('Could not sign out of Supabase:', error);
-      showToast(`Sign out failed: ${error.message}`);
-      return;
+      const message = error instanceof Error ? error.message : 'Unknown authentication error';
+      showToast(`Sign out failed: ${message}`);
     }
-    showToast('Signed out successfully.');
   };
 
   // Handle report creation
