@@ -5,13 +5,31 @@
 
 ---
 
-## 🌐 Public Access URLs
+## 🌐 Universal Live Website (Works on Every Device)
 
-- **Live Public URL (Shared Preview):**  
-  👉 [https://ais-pre-gooh2fuo46gwjbbjsqxz6u-456807731743.asia-east1.run.app](https://ais-pre-gooh2fuo46gwjbbjsqxz6u-456807731743.asia-east1.run.app)
+To open and test **FixMyCity** on **any device** (Android, iPhone, iPad, Windows, macOS, Linux, or tablet) without requiring any login or Google Cloud permissions, use the **Public Shared URL**:
 
-- **Development App URL:**  
-  [https://ais-dev-gooh2fuo46gwjbbjsqxz6u-456807731743.asia-east1.run.app](https://ais-dev-gooh2fuo46gwjbbjsqxz6u-456807731743.asia-east1.run.app)
+### 📱 **Universal Public URL (Any Device & Browser):**
+👉 **[https://ais-pre-gooh2fuo46gwjbbjsqxz6u-456807731743.asia-east1.run.app](https://ais-pre-gooh2fuo46gwjbbjsqxz6u-456807731743.asia-east1.run.app)**
+
+> 💡 **Why this link works everywhere:**  
+> - **Publicly accessible:** Anyone with this link can open the app directly on any mobile browser (Chrome, Safari, Firefox, Edge, Samsung Internet) without logging into AI Studio.  
+> - **Full HTTPS Camera Support:** Real-time camera hardware streaming and photo snapping works natively over secure HTTPS on mobile and desktop.  
+> - **Responsive Touch UI:** Automatically adapts from desktop widescreen dashboards down to native mobile views with touch navigation.
+
+### 📲 Instant Mobile Access via QR Code:
+Scan this QR code with your phone camera to open FixMyCity immediately:
+
+<p align="center">
+  <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=https%3A%2F%2Fais-pre-gooh2fuo46gwjbbjsqxz6u-456807731743.asia-east1.run.app" alt="FixMyCity QR Code" width="160" />
+  <br/>
+  <sub><i>Point your mobile camera here to test on your phone</i></sub>
+</p>
+
+---
+
+### 💻 Developer App URL (Studio Session Only):
+- Internal AI Studio Workspace: [https://ais-dev-gooh2fuo46gwjbbjsqxz6u-456807731743.asia-east1.run.app](https://ais-dev-gooh2fuo46gwjbbjsqxz6u-456807731743.asia-east1.run.app) *(Requires logged-in AI Studio developer account)*
 
 ---
 
