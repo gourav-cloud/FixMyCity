@@ -4,6 +4,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
+import type { User as SupabaseUser } from '@supabase/supabase-js';
 import { 
   fetchIssues, 
   createIssue as apiCreateIssue, 
@@ -23,6 +24,8 @@ import { UserProfileModal } from './components/UserProfileModal';
 import { SerpApiExplorer } from './components/SerpApiExplorer';
 import { NotificationsDropdown, NotificationItem } from './components/NotificationsDropdown';
 import { WelcomeScreen } from './components/WelcomeScreen';
+import { LoginPage } from './components/LoginPage';
+import { supabaseClient } from './services/supabase';
 import { 
   Home, 
   MapPin, 
@@ -45,6 +48,8 @@ export default function App() {
   const [currentCity, setCurrentCity] = useState('Bhopal (MP Nagar & City)');
   const [isAdminMode, setIsAdminMode] = useState(false);
   const [showWelcome, setShowWelcome] = useState(false);
+  const [isLoginPage, setIsLoginPage] = useState(() => window.location.pathname === '/login');
+  const [authUser, setAuthUser] = useState<SupabaseUser | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   const [notifications, setNotifications] = useState<NotificationItem[]>([
@@ -98,6 +103,62 @@ export default function App() {
       }
     });
   }, []);
+
+  useEffect(() => {
+    const handlePopState = () => setIsLoginPage(window.location.pathname === '/login');
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
+  useEffect(() => {
+    if (!supabaseClient) return;
+
+    let isMounted = true;
+    const { data: { subscription } } = supabaseClient.auth.onAuthStateChange((_event, session) => {
+      setAuthUser(session?.user ?? null);
+    });
+
+    supabaseClient.auth.getSession().then(({ data, error }) => {
+      if (!isMounted) return;
+      if (error) {
+        console.error('Could not restore the Supabase session:', error);
+        return;
+      }
+      setAuthUser(data.session?.user ?? null);
+    }).catch((error: unknown) => {
+      console.error('Could not restore the Supabase session:', error);
+    });
+
+    return () => {
+      isMounted = false;
+      subscription.unsubscribe();
+    };
+  }, []);
+
+  const navigateToLogin = () => {
+    if (window.location.pathname !== '/login') {
+      window.history.pushState({}, '', '/login');
+    }
+    setIsLoginPage(true);
+  };
+
+  const navigateToApp = () => {
+    if (window.location.pathname !== '/') {
+      window.history.pushState({}, '', '/');
+    }
+    setIsLoginPage(false);
+  };
+
+  const handleSignOut = async () => {
+    if (!supabaseClient) return;
+    const { error } = await supabaseClient.auth.signOut();
+    if (error) {
+      console.error('Could not sign out of Supabase:', error);
+      showToast(`Sign out failed: ${error.message}`);
+      return;
+    }
+    showToast('Signed out successfully.');
+  };
 
   // Handle report creation
   const handleCreateIssue = async (newIssueData: Partial<Issue>) => {
@@ -208,6 +269,10 @@ export default function App() {
 
   const unreadCount = notifications.filter(n => !n.read).length;
 
+  if (isLoginPage) {
+    return <LoginPage onBack={navigateToApp} onAuthenticated={navigateToApp} />;
+  }
+
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans selection:bg-cyan-500 selection:text-slate-950 pb-20 lg:pb-0">
       
@@ -215,7 +280,7 @@ export default function App() {
       {showWelcome && (
         <WelcomeScreen
           onGetStarted={() => setShowWelcome(false)}
-          onLogin={() => setShowWelcome(false)}
+          onLogin={navigateToLogin}
         />
       )}
 
@@ -231,6 +296,9 @@ export default function App() {
         setCurrentCity={setCurrentCity}
         isAdminMode={isAdminMode}
         setIsAdminMode={setIsAdminMode}
+        authEmail={authUser?.email ?? null}
+        onOpenLogin={navigateToLogin}
+        onSignOut={handleSignOut}
       />
 
       {/* Toast Notification Bar */}
@@ -263,7 +331,7 @@ export default function App() {
               }
             }}
             onOpenProfile={() => setIsProfileOpen(true)}
-            userName="Gaurav"
+            userName={authUser?.user_metadata?.full_name || authUser?.email?.split('@')[0] || 'Gaurav'}
           />
         ) : activeView === 'nearby' ? (
           <NearbyIssues
@@ -289,7 +357,7 @@ export default function App() {
             onSelectIssue={(issue) => setSelectedIssue(issue)}
             onNavigate={(view) => setActiveView(view)}
             onOpenProfile={() => setIsProfileOpen(true)}
-            userName="Gaurav"
+            userName={authUser?.user_metadata?.full_name || authUser?.email?.split('@')[0] || 'Gaurav'}
           />
         )}
       </main>

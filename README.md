@@ -184,6 +184,12 @@ APP_URL="https://ais-pre-gooh2fuo46gwjbbjsqxz6u-456807731743.asia-east1.run.app"
 
 ## 💻 Local Development
 
+### Supabase Authentication
+
+The separate `/login` page supports email/password sign-in, account creation, and password reset through Supabase Auth. Copy `.env.example` to `.env`, then set `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` from your Supabase project. Restart the development server after changing these values. Configure the app's local and deployed URLs in Supabase Auth's allowed redirect/site URL settings, and configure email confirmation if you want new accounts to verify their address.
+
+Only the Supabase publishable/anon key belongs in the browser environment; never use a service-role key. Authentication is currently optional, and the existing Express issue APIs and demo data are not protected or scoped to the signed-in user.
+
 ```bash
 # Install dependencies
 npm install

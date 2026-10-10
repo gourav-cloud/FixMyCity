@@ -9,7 +9,9 @@ import {
   Globe2, 
   Sparkles,
   Layers,
-  ChevronDown
+  ChevronDown,
+  LogIn,
+  LogOut
 } from 'lucide-react';
 
 interface HeaderProps {
@@ -23,6 +25,9 @@ interface HeaderProps {
   setCurrentCity: (city: string) => void;
   isAdminMode: boolean;
   setIsAdminMode: (admin: boolean) => void;
+  authEmail: string | null;
+  onOpenLogin: () => void;
+  onSignOut: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -36,6 +41,9 @@ export const Header: React.FC<HeaderProps> = ({
   setCurrentCity,
   isAdminMode,
   setIsAdminMode,
+  authEmail,
+  onOpenLogin,
+  onSignOut,
 }) => {
   return (
     <header className="sticky top-0 z-40 bg-slate-900/95 backdrop-blur-md border-b border-slate-800 text-white">
@@ -190,22 +198,36 @@ export const Header: React.FC<HeaderProps> = ({
               )}
             </button>
 
-            {/* User Avatar & Profile */}
-            <button
-              onClick={onOpenProfile}
-              className="flex items-center gap-2 pl-1 pr-2 py-1 rounded-xl bg-slate-800/60 hover:bg-slate-700/60 border border-slate-700/80 transition cursor-pointer"
-            >
-              <img
-                src={isAdminMode 
-                  ? "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&w=120&q=80"
-                  : "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=120&q=80"}
-                alt="User"
-                className="w-7 h-7 rounded-lg object-cover border border-slate-600"
-              />
-              <span className="hidden md:inline text-xs font-medium text-slate-200">
-                {isAdminMode ? 'Amit Kumar (Officer)' : 'Gaurav'}
-              </span>
-            </button>
+            {authEmail ? (
+              <>
+                <button
+                  onClick={onOpenProfile}
+                  className="flex items-center gap-2 pl-1 pr-2 py-1 rounded-xl bg-slate-800/60 hover:bg-slate-700/60 border border-slate-700/80 transition cursor-pointer"
+                  title={authEmail}
+                >
+                  <div className="w-7 h-7 rounded-lg bg-cyan-500/20 border border-cyan-500/40 flex items-center justify-center text-xs font-bold text-cyan-200">
+                    {authEmail.charAt(0).toUpperCase()}
+                  </div>
+                  <span className="hidden md:inline max-w-32 truncate text-xs font-medium text-slate-200">{authEmail}</span>
+                </button>
+                <button
+                  onClick={onSignOut}
+                  className="p-2 rounded-xl bg-slate-800/80 hover:bg-slate-700/80 border border-slate-700 text-slate-300 hover:text-white transition cursor-pointer"
+                  title="Sign out"
+                  aria-label="Sign out"
+                >
+                  <LogOut className="w-4 h-4" />
+                </button>
+              </>
+            ) : (
+              <button
+                onClick={onOpenLogin}
+                className="flex items-center gap-2 px-3 py-2 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-semibold transition cursor-pointer"
+              >
+                <LogIn className="w-4 h-4" />
+                <span>Sign in</span>
+              </button>
+            )}
 
           </div>
 
