@@ -14,7 +14,7 @@ To open and test **FixMyCity** on **any device** (Android, iPhone, iPad, Windows
 
 > 💡 **Why this link works everywhere:**  
 > - **Publicly accessible:** Anyone with this link can open the app directly on any mobile browser (Chrome, Safari, Firefox, Edge, Samsung Internet) without logging into AI Studio.  
-> - **Image-first issue reporting:** Citizens can upload photos, add locations, and submit issues with a clean, focused workflow.  
+> - **Full HTTPS Camera Support:** Real-time camera hardware streaming and photo snapping works natively over secure HTTPS on mobile and desktop.  
 > - **Responsive Touch UI:** Automatically adapts from desktop widescreen dashboards down to native mobile views with touch navigation.
 
 ### 📲 Instant Mobile Access via QR Code:
@@ -106,7 +106,7 @@ Report  ──▶  Verify  ──▶  Prioritize  ──▶  Assign  ──▶  
 - Live issues ticker showing critical and high-priority tickets near the user's location.
 
 ### 2. Issue Reporting Flow with AI Classification
-- **Image Upload & Preview:** Users can attach a photo and review the issue before submitting.
+- **Camera Viewfinder:** Visual framing reticle simulating an active camera capture.
 - **Location Detection:** Automatic address and GPS coordinate detection (e.g., *MP Nagar Zone 1, Bhopal*).
 - **AI Vision Analysis:** Identifies problem category with confidence score (e.g., *Pothole 94%*), assesses impact (*vehicle blowout risk, skid danger*), and suggests turnaround time (*24–48 hours*).
 - **Duplicate Detection:** Checks for existing tickets within a 200m radius and allows users to **Upvote (+1)** instead of creating duplicate clutter.

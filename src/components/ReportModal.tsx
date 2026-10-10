@@ -12,6 +12,11 @@ import {
   Phone, 
   Globe2, 
   ExternalLink,
+  RefreshCw,
+  RotateCcw,
+  FlipHorizontal,
+  Video,
+  VideoOff,
   Image as ImageIcon,
   CheckCircle2
 } from 'lucide-react';
@@ -106,12 +111,112 @@ export const ReportModal: React.FC<ReportModalProps> = ({
   const [lat, setLat] = useState(SAMPLE_PRESETS[0].lat);
   const [lng, setLng] = useState(SAMPLE_PRESETS[0].lng);
 
+  // Live Camera states
+  const [isCameraActive, setIsCameraActive] = useState(false);
+  const [cameraError, setCameraError] = useState<string | null>(null);
+  const [facingMode, setFacingMode] = useState<'environment' | 'user'>('environment');
+  const [hasCapturedPhoto, setHasCapturedPhoto] = useState(false);
+  const [isFlashActive, setIsFlashActive] = useState(false);
+
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [aiAnalysis, setAiAnalysis] = useState<AiAnalysis | null>(null);
   const [serpAuthority, setSerpAuthority] = useState<SerpApiAuthorityResult | null>(null);
   const [duplicateWarning, setDuplicateWarning] = useState<Issue | null>(null);
+
+  // Stop camera tracks helper
+  const stopCameraStream = () => {
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(track => {
+        track.stop();
+      });
+      streamRef.current = null;
+    }
+    if (videoRef.current) {
+      videoRef.current.srcObject = null;
+    }
+  };
+
+  // Start live webcam / back camera
+  const startCamera = async (mode: 'environment' | 'user' = facingMode) => {
+    stopCameraStream();
+    setCameraError(null);
+    setIsCameraActive(true);
+    setHasCapturedPhoto(false);
+
+    try {
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        throw new Error('Camera access not supported by your browser.');
+      }
+
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: {
+          facingMode: mode,
+          width: { ideal: 1280 },
+          height: { ideal: 720 },
+        },
+        audio: false,
+      });
+
+      streamRef.current = stream;
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+        await videoRef.current.play();
+      }
+    } catch (err: any) {
+      console.warn('Camera stream error:', err);
+      setIsCameraActive(false);
+      setCameraError(
+        err?.message || 'Unable to access camera. Please check camera permissions or upload an image.'
+      );
+    }
+  };
+
+  // Flip camera between front & back
+  const handleFlipCamera = () => {
+    const nextMode = facingMode === 'environment' ? 'user' : 'environment';
+    setFacingMode(nextMode);
+    startCamera(nextMode);
+  };
+
+  // Snap photo from live video canvas
+  const handleSnapPhoto = () => {
+    if (!videoRef.current) return;
+
+    const video = videoRef.current;
+    const canvas = document.createElement('canvas');
+    canvas.width = video.videoWidth || 1280;
+    canvas.height = video.videoHeight || 720;
+    const ctx = canvas.getContext('2d');
+
+    if (ctx) {
+      // Trigger flash animation
+      setIsFlashActive(true);
+      setTimeout(() => setIsFlashActive(false), 200);
+
+      // Draw frame to canvas
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      const dataUrl = canvas.toDataURL('image/jpeg', 0.92);
+
+      setImageUrl(dataUrl);
+      setHasCapturedPhoto(true);
+      setSelectedPreset(null);
+      stopCameraStream();
+
+      // Trigger automatic AI analysis on captured snapshot
+      setTitle(`Civic Report Photo - ${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`);
+      runIntelligencePipeline(category, 'Civic issue captured with camera', description, address);
+    }
+  };
+
+  // Retake photo: restart live stream
+  const handleRetake = () => {
+    setHasCapturedPhoto(false);
+    startCamera(facingMode);
+  };
 
   // Trigger AI Analysis and SerpAPI Authority resolution whenever preset or text changes
   const runIntelligencePipeline = async (cat: string, curTitle: string, curDesc: string, curAddress: string) => {
@@ -143,10 +248,21 @@ export const ReportModal: React.FC<ReportModalProps> = ({
   useEffect(() => {
     if (isOpen) {
       runIntelligencePipeline(category, title, description, address);
+    } else {
+      stopCameraStream();
+      setIsCameraActive(false);
+      setHasCapturedPhoto(false);
     }
+
+    return () => {
+      stopCameraStream();
+    };
   }, [isOpen]);
 
   const handleSelectPreset = (idx: number) => {
+    stopCameraStream();
+    setIsCameraActive(false);
+    setHasCapturedPhoto(false);
     setSelectedPreset(idx);
 
     const p = SAMPLE_PRESETS[idx];
@@ -164,6 +280,9 @@ export const ReportModal: React.FC<ReportModalProps> = ({
   const handleCustomUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      stopCameraStream();
+      setIsCameraActive(false);
+      setHasCapturedPhoto(false);
       setSelectedPreset(null);
 
       const reader = new FileReader();
@@ -182,6 +301,8 @@ export const ReportModal: React.FC<ReportModalProps> = ({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!title.trim()) return;
+
+    stopCameraStream();
 
     onSubmit({
       title,
@@ -241,7 +362,10 @@ export const ReportModal: React.FC<ReportModalProps> = ({
             </div>
           </div>
           <button
-            onClick={onClose}
+            onClick={() => {
+              stopCameraStream();
+              onClose();
+            }}
             className="p-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white transition cursor-pointer"
           >
             <X className="w-5 h-5" />
@@ -250,31 +374,171 @@ export const ReportModal: React.FC<ReportModalProps> = ({
 
         <form onSubmit={handleSubmit} className="p-5 sm:p-6 space-y-5">
           
-          {/* Upload image */}
+          {/* Camera / Upload Source Switcher Bar */}
           <div className="flex flex-wrap items-center justify-between gap-2 bg-slate-950 p-2 rounded-2xl border border-slate-800">
-            <label className="px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-800 text-slate-300 hover:text-white hover:bg-slate-700 transition flex items-center gap-1.5 cursor-pointer">
-              <Upload className="w-3.5 h-3.5 text-cyan-400" />
-              <span>Upload File</span>
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                onChange={handleCustomUpload}
-                className="hidden"
-              />
-            </label>
+            <div className="flex items-center gap-1.5">
+              <button
+                type="button"
+                onClick={() => startCamera(facingMode)}
+                className={`px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer ${
+                  isCameraActive
+                    ? 'bg-cyan-500 text-slate-950 shadow-md shadow-cyan-500/30 font-bold'
+                    : 'bg-slate-800 text-slate-300 hover:text-white hover:bg-slate-700'
+                }`}
+              >
+                <Camera className="w-3.5 h-3.5" />
+                <span>Open Live Camera</span>
+              </button>
+
+              <label className="px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-800 text-slate-300 hover:text-white hover:bg-slate-700 transition flex items-center gap-1.5 cursor-pointer">
+                <Upload className="w-3.5 h-3.5 text-cyan-400" />
+                <span>Upload File</span>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  capture="environment"
+                  onChange={handleCustomUpload}
+                  className="hidden"
+                />
+              </label>
+            </div>
+
+            {/* If camera is active: show flip & close camera */}
+            {isCameraActive && (
+              <div className="flex items-center gap-1.5">
+                <button
+                  type="button"
+                  onClick={handleFlipCamera}
+                  className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition"
+                  title="Flip Camera (Front / Back)"
+                >
+                  <FlipHorizontal className="w-4 h-4" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    stopCameraStream();
+                    setIsCameraActive(false);
+                  }}
+                  className="px-2.5 py-1 rounded-lg bg-rose-950/80 text-rose-300 hover:bg-rose-900 border border-rose-800/60 text-xs font-medium transition"
+                >
+                  Stop Camera
+                </button>
+              </div>
+            )}
           </div>
 
-          {/* Image preview */}
-          <div className="relative w-full h-64 sm:h-72 rounded-2xl overflow-hidden border-2 border-slate-700 bg-slate-950 flex items-center justify-center">
-            <img
-              src={imageUrl}
-              alt="Problem preview"
-              className="w-full h-full object-cover"
-            />
+          {/* Camera Error Alert if blocked */}
+          {cameraError && (
+            <div className="p-3 bg-amber-950/60 border border-amber-700/60 rounded-xl text-xs text-amber-200 flex items-start gap-2">
+              <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+              <div className="flex-1">
+                <span>{cameraError}</span>
+                <span className="block text-[11px] text-amber-300/80 mt-0.5">
+                  You can use the <strong>Upload File</strong> button above or click any sample preset below.
+                </span>
+              </div>
+            </div>
+          )}
 
+          {/* Viewfinder Camera Mockup matching Screen 3 */}
+          <div className="relative w-full h-64 sm:h-72 rounded-2xl overflow-hidden border-2 border-slate-700 bg-slate-950 flex items-center justify-center">
+            
+            {/* White flash effect on capture */}
+            {isFlashActive && (
+              <div className="absolute inset-0 bg-white z-40 animate-out fade-out duration-200 pointer-events-none" />
+            )}
+
+            {/* CASE 1: Active Live Video Stream */}
+            {isCameraActive ? (
+              <video
+                ref={videoRef}
+                playsInline
+                autoPlay
+                muted
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              /* CASE 2: Display Selected / Uploaded / Captured Image */
+              <img
+                src={imageUrl}
+                alt="Problem viewfinder"
+                className="w-full h-full object-cover"
+              />
+            )}
+
+            {/* Gradient overlays for aesthetic readability */}
             <div className="absolute inset-0 bg-gradient-to-t from-slate-950/85 via-transparent to-slate-950/40 pointer-events-none" />
 
+            {/* Viewfinder Reticle / Brackets matching Screen 3 */}
+            <div className="absolute inset-6 sm:inset-10 border-2 border-white/60 rounded-2xl pointer-events-none flex flex-col justify-between p-2">
+              <div className="flex justify-between">
+                <div className="w-5 h-5 border-t-2 border-l-2 border-cyan-400 -mt-2 -ml-2" />
+                <div className="w-5 h-5 border-t-2 border-r-2 border-cyan-400 -mt-2 -mr-2" />
+              </div>
+              
+              {/* Center focus indicator */}
+              <div className="self-center w-8 h-8 rounded-full border border-cyan-400/60 flex items-center justify-center">
+                <div className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse" />
+              </div>
+
+              <div className="flex justify-between">
+                <div className="w-5 h-5 border-b-2 border-l-2 border-cyan-400 -mb-2 -ml-2" />
+                <div className="w-5 h-5 border-b-2 border-r-2 border-cyan-400 -mb-2 -mr-2" />
+              </div>
+            </div>
+
+            {/* Status indicator badge (Live vs Captured vs Preset) */}
+            <div className="absolute top-3 left-3 z-10 flex items-center gap-2">
+              {isCameraActive ? (
+                <span className="px-2.5 py-1 rounded-xl bg-rose-600/90 backdrop-blur-md text-white text-[11px] font-bold flex items-center gap-1.5 shadow-lg">
+                  <span className="w-2 h-2 rounded-full bg-white animate-ping" />
+                  <span>LIVE CAMERA</span>
+                </span>
+              ) : hasCapturedPhoto ? (
+                <span className="px-2.5 py-1 rounded-xl bg-emerald-600/90 backdrop-blur-md text-white text-[11px] font-bold flex items-center gap-1.5 shadow-lg">
+                  <CheckCircle2 className="w-3 h-3 text-white" />
+                  <span>PHOTO CAPTURED</span>
+                </span>
+              ) : (
+                <span className="px-2.5 py-1 rounded-xl bg-slate-900/80 backdrop-blur-md text-slate-300 text-[11px] font-medium border border-slate-700">
+                  Preview Image
+                </span>
+              )}
+            </div>
+
+            {/* Top Right: Retake or Switch button */}
+            {hasCapturedPhoto && (
+              <div className="absolute top-3 right-3 z-10">
+                <button
+                  type="button"
+                  onClick={handleRetake}
+                  className="px-3 py-1.5 rounded-xl bg-slate-900/90 backdrop-blur-md border border-slate-700 text-xs font-semibold text-white hover:bg-slate-800 flex items-center gap-1.5 transition shadow-lg"
+                >
+                  <RotateCcw className="w-3.5 h-3.5 text-cyan-400" />
+                  <span>Retake</span>
+                </button>
+              </div>
+            )}
+
+            {/* Center Bottom: Live Shutter Button if camera is active */}
+            {isCameraActive && (
+              <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={handleSnapPhoto}
+                  className="group relative w-16 h-16 rounded-full bg-white/20 backdrop-blur-md border-4 border-white flex items-center justify-center shadow-2xl active:scale-95 transition-transform cursor-pointer"
+                  title="Take Photo"
+                >
+                  <div className="w-11 h-11 rounded-full bg-white group-hover:scale-95 transition-transform shadow-inner flex items-center justify-center">
+                    <Camera className="w-5 h-5 text-slate-900" />
+                  </div>
+                </button>
+              </div>
+            )}
+
+            {/* Location Tag matching Screen 3 */}
             <div className="absolute bottom-3 left-3 z-10 flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-900/90 backdrop-blur-md border border-slate-700 text-xs text-white">
               <MapPin className="w-3.5 h-3.5 text-cyan-400 animate-pulse" />
               <span className="font-medium">Location detected:</span>
@@ -321,7 +585,7 @@ export const ReportModal: React.FC<ReportModalProps> = ({
               </div>
               {isAnalyzing ? (
                 <div className="flex items-center gap-1 text-[11px] text-cyan-400 font-medium">
-                  <Sparkles className="w-3 h-3" />
+                  <RefreshCw className="w-3 h-3 animate-spin" />
                   <span>Processing photo...</span>
                 </div>
               ) : (
@@ -423,6 +687,7 @@ export const ReportModal: React.FC<ReportModalProps> = ({
                     type="button"
                     onClick={() => {
                       onUpvoteDuplicate(duplicateWarning.id);
+                      stopCameraStream();
                       onClose();
                     }}
                     className="px-3 py-1 bg-amber-600 hover:bg-amber-500 text-white font-semibold rounded-lg text-xs transition cursor-pointer"
