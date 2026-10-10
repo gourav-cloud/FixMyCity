@@ -8,7 +8,6 @@
 ## 🌐 Open FixMyCity
 
 - **Public app:** [Open FixMyCity](https://ais-pre-gooh2fuo46gwjbbjsqxz6u-456807731743.asia-east1.run.app/)
-- **Login page:** [Sign in or create an account](https://ais-pre-gooh2fuo46gwjbbjsqxz6u-456807731743.asia-east1.run.app/login)
 - **Latest source code:** [GitHub repository](https://github.com/gourav-cloud/FixMyCity)
 
 These links open the existing Cloud Run deployment. Publishing commits to GitHub does not automatically update that service; the Cloud Run app must be redeployed for the latest source changes to appear at the public URLs.
